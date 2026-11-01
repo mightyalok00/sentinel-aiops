@@ -36,8 +36,8 @@ def generate_incident_postmortem(incident: dict[str, Any]) -> str:
     """
     case_id = incident.get("case_id", "incident-live")
     suspect_services = incident.get("suspect_services", [])
-    primary_service = suspect_services[0]["service"] if suspect_services else "unknown-service"
-    attribution_share = suspect_services[0].get("attribution_share_pct", suspect_services[0].get("confidence_pct", 85.0)) if suspect_services else 75.0
+    primary_service = suspect_services[0]["service"] if suspect_services else incident.get("service", "unknown-service")
+    attribution_share = suspect_services[0].get("attribution_share_pct", suspect_services[0].get("confidence_pct", incident.get("confidence", 85.0))) if suspect_services else incident.get("confidence", 75.0)
 
     fault_type = incident.get("fault_type", "resource_saturation / latency_spike")
     score = incident.get("overall_score", 0.85)

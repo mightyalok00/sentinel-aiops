@@ -30,11 +30,18 @@ jobs:
           pip install -r requirements.txt
           pip install ruff pytest-cov httpx
 
+      - name: Seed Test Data Fixture
+        run: |
+          mkdir -p data/rcaeval/re1ob_adservice_cpu_1
+          echo '1600000000' > data/rcaeval/re1ob_adservice_cpu_1/inject_time.txt
+          echo '[{"time": 1600000000.0, "adservice_cpu": 0.85, "cartservice_cpu": 0.20}]' > data/rcaeval/re1ob_adservice_cpu_1/metrics.json
+
       - name: Lint with Ruff
         run: |
           ruff check . --ignore E501
 
       - name: Run Pytest Test Suite
+        env:
+          PYTHONPATH: .
         run: |
           python -m pytest -v --cov=backend --cov=ml_engine
-
