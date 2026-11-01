@@ -82,7 +82,7 @@ def load_lstm_autoencoder() -> Optional[dict[str, Any]]:
 
 def _aggregate_root_cause(
     features: list[str],
-    metric_scores: np.ndarray,
+    metric_scores: Any,
     top_k: int = 3
 ) -> dict[str, Any]:
     """Aggregates metric-level anomaly deviations by microservice to rank root causes.
@@ -222,7 +222,7 @@ def score_rows(
                 X_filled = np.where(np.isfinite(full_seq), full_seq, medians[None, :])
                 X_norm = ((X_filled - mean) / std).astype(np.float32)
 
-                tensor_in = torch.from_numpy(X_norm).unsqueeze(0)
+                tensor_in = torch.as_tensor(X_norm).unsqueeze(0)
                 with torch.no_grad():
                     recon = lstm_data["model"](tensor_in).squeeze(0).numpy()
 
@@ -237,7 +237,7 @@ def score_rows(
 
                 windows = sliding_window_view(X_norm, (WINDOW_SIZE, X_norm.shape[1])).squeeze(1).copy()
 
-                tensor_in = torch.from_numpy(windows)
+                tensor_in = torch.as_tensor(windows)
                 with torch.no_grad():
                     recon = lstm_data["model"](tensor_in).numpy()
 
