@@ -1,7 +1,7 @@
 """Unit Tests for Multimodal Log, Trace, and Cross-Signal Fusion Processing."""
 
 from pathlib import Path
-import pytest
+
 from ml_engine.multimodal import ERROR_PATTERN, analyze_logs, analyze_traces, fuse_multimodal_evidence
 
 

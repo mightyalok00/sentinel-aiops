@@ -12,20 +12,21 @@ This module implements the classical machine learning baseline for time-series a
    them by microservice prefix.
 """
 
-from pathlib import Path
 import json
-from typing import Any, Optional
+from pathlib import Path
+from typing import Any
+
 import joblib
 import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import (
+    average_precision_score,
+    classification_report,
     f1_score,
     precision_recall_curve,
     precision_score,
     recall_score,
-    average_precision_score,
-    classification_report,
 )
 from sklearn.preprocessing import RobustScaler
 
@@ -110,7 +111,7 @@ def train_isolation_forest(data_dir: Path, output_dir: Path) -> dict[str, Any]:
         features = manifest.get("features", [])
 
     with np.load(data_dir / "train.npz", allow_pickle=False) as d:
-        train_x, train_y = d["X"], d["y"]
+        train_x = d["X"]
     with np.load(data_dir / "val.npz", allow_pickle=False) as d:
         val_x, val_y = d["X"], d["y"]
 

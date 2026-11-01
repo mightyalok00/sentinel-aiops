@@ -1,0 +1,41 @@
+{
+  "benchmark_suite": "re1ob*",
+  "model_architecture": "LSTM",
+  "total_cases_evaluated": 30,
+  "hit_at_1_accuracy_pct": 66.7,
+  "hit_at_3_accuracy_pct": 80.0,
+  "hit_at_5_accuracy_pct": 80.0,
+  "mean_reciprocal_rank_mrr": 0.722,
+  "fault_type_breakdown": {
+    "cpu": {
+      "cases": 10,
+      "hit_at_1_pct": 100.0,
+      "hit_at_3_pct": 100.0,
+      "mrr": 1.0
+    },
+    "delay": {
+      "cases": 5,
+      "hit_at_1_pct": 0.0,
+      "hit_at_3_pct": 0.0,
+      "mrr": 0.0
+    },
+    "disk": {
+      "cases": 5,
+      "hit_at_1_pct": 100.0,
+      "hit_at_3_pct": 100.0,
+      "mrr": 1.0
+    },
+    "loss": {
+      "cases": 5,
+      "hit_at_1_pct": 0.0,
+      "hit_at_3_pct": 80.0,
+      "mrr": 0.333
+    },
+    "mem": {
+      "cases": 5,
+      "hit_at_1_pct": 100.0,
+      "hit_at_3_pct": 100.0,
+      "mrr": 1.0
+    }
+  }
+}

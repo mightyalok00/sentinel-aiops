@@ -12,8 +12,8 @@ The structure adheres to modern SRE and DevOps incident retrospectives:
 5. Long-term Preventative Engineering Action Items
 """
 
-from datetime import datetime, timezone
 import json
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -87,10 +87,10 @@ def generate_incident_postmortem(incident: dict[str, Any]) -> str:
         traces_section = "- *Distributed tracing data within normal baselines.*"
 
     return f"""# [CRITICAL ALERT] SRE INCIDENT POST-MORTEM REPORT
-**Incident ID**: `{case_id}`  
-**Generated At**: {timestamp}  
-**Classification**: **SEV-1 (Critical Telemetry Anomaly)**  
-**Investigation Engine**: Sentinel AI — {model_used}  
+**Incident ID**: `{case_id}`
+**Generated At**: {timestamp}
+**Classification**: **SEV-1 (Critical Telemetry Anomaly)**
+**Investigation Engine**: Sentinel AI — {model_used}
 
 ---
 

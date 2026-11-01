@@ -13,9 +13,11 @@ import json
 from pathlib import Path
 from typing import Any
 
+from ml_engine.checksums import generate_dataset_checksums, verify_dataset_checksums
 from ml_engine.data import download_dataset, inspect_dataset, prepare_dataset
-from ml_engine.train import train_isolation_forest
 from ml_engine.lstm_autoencoder import train_autoencoder
+from ml_engine.rca_evaluator import evaluate_rca_benchmark
+from ml_engine.train import train_isolation_forest
 
 
 def evaluate_models(data_dir: Path, artifacts_dir: Path) -> dict[str, Any]:
@@ -83,6 +85,25 @@ def main() -> None:
     p_eval.add_argument("--data-dir", type=Path, default=Path("data/processed"), help="Processed data folder")
     p_eval.add_argument("--artifacts-dir", type=Path, default=Path("artifacts"), help="Artifacts directory")
 
+    # Command: evaluate-rca
+    p_rca = sub.add_parser("evaluate-rca", help="Benchmark empirical Top-K Root Cause Analysis accuracy (Hit@1, Hit@3, MRR)")
+    p_rca.add_argument("--data-dir", type=Path, default=Path("data/rcaeval"), help="Raw benchmark dataset folder")
+    p_rca.add_argument("--model", default="lstm", choices=["lstm", "iforest"], help="Model engine to evaluate")
+    p_rca.add_argument("--pattern", default="re1ob*", help="Case glob filter pattern")
+    p_rca.add_argument("--max-cases", type=int, default=None, help="Optional limit on cases to evaluate")
+    p_rca.add_argument("--output", type=Path, default=Path("artifacts/rca_benchmark_results.json"), help="Output path")
+
+    # Command: checksums
+    p_chk = sub.add_parser("checksums", help="Generate SHA-256 reproducibility checksums manifest for dataset")
+    p_chk.add_argument("--data-dir", type=Path, default=Path("data/rcaeval"), help="Raw benchmark dataset folder")
+    p_chk.add_argument("--output", type=Path, default=Path("data/checksums.json"), help="Manifest destination")
+    p_chk.add_argument("--pattern", default="re1ob*", help="Case glob filter pattern")
+
+    # Command: verify-checksums
+    p_vchk = sub.add_parser("verify-checksums", help="Verify dataset integrity against SHA-256 checksums manifest")
+    p_vchk.add_argument("--data-dir", type=Path, default=Path("data/rcaeval"), help="Raw benchmark dataset folder")
+    p_vchk.add_argument("--manifest", type=Path, default=Path("data/checksums.json"), help="Manifest path to verify")
+
     args = parser.parse_args()
 
     if args.cmd == "download":
@@ -97,6 +118,12 @@ def main() -> None:
         result = train_autoencoder(args.data_dir, args.output_file, args.epochs, args.batch_size, args.lr)
     elif args.cmd == "evaluate":
         result = evaluate_models(args.data_dir, args.artifacts_dir)
+    elif args.cmd == "evaluate-rca":
+        result = evaluate_rca_benchmark(args.data_dir, args.model, args.pattern, args.max_cases, args.output)
+    elif args.cmd == "checksums":
+        result = generate_dataset_checksums(args.data_dir, args.output, args.pattern)
+    elif args.cmd == "verify-checksums":
+        result = verify_dataset_checksums(args.data_dir, args.manifest)
     else:
         result = {"error": f"Unknown subcommand: {args.cmd}"}
 

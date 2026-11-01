@@ -10,9 +10,10 @@ This module unifies multiple observability signals:
    and cross-validates microservice attribution across all telemetry modalities.
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Any
+
 import pandas as pd
 
 # Regular expression matching critical error signatures in microservice container logs

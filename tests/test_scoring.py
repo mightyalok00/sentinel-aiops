@@ -2,7 +2,8 @@
 
 import numpy as np
 import pytest
-from backend.scoring import score_rows, _aggregate_root_cause, WINDOW_SIZE
+
+from backend.scoring import WINDOW_SIZE, _aggregate_root_cause, score_rows
 
 
 def test_sliding_window_enforcement_short_sequence():

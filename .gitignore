@@ -7,6 +7,7 @@ __pycache__/
 # Raw and windowed dataset partitions (RCAEval benchmark files)
 data/*
 !data/.gitkeep
+!data/checksums.json
 
 # System and temporary logs
 *.log

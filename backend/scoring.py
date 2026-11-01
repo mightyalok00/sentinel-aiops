@@ -14,8 +14,10 @@ This module provides production-grade inference pipelines for telemetry anomaly 
      relative deviation shares as Bayesian posterior probabilities.
 """
 
+import warnings
 from pathlib import Path
 from typing import Any, Optional
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -127,11 +129,25 @@ def _aggregate_root_cause(
     )
     metric_attributions.sort(key=lambda x: x["anomaly_contribution"], reverse=True)
 
+    # Temperature-scaled Softmax calibration over service scores for calibrated attribution probability
+    if ranked_services:
+        raw_scores = np.array([item["attribution_score"] for item in ranked_services], dtype=np.float64)
+        if len(raw_scores) > 1 and np.std(raw_scores) > 1e-6:
+            # Standardize and scale with temperature T=1.5 to prevent overconfidence
+            scaled = (raw_scores - np.mean(raw_scores)) / (np.std(raw_scores) * 1.5)
+            exp_s = np.exp(scaled - np.max(scaled))
+            probs = (exp_s / np.sum(exp_s)) * 100.0
+        else:
+            probs = np.full(len(ranked_services), 100.0 / max(len(ranked_services), 1))
+
+        for idx, item in enumerate(ranked_services):
+            item["calibrated_probability_pct"] = round(float(probs[idx]), 1)
+
     return {
         "suspect_services": ranked_services[:top_k],
         "top_contributing_metrics": metric_attributions[:5],
         "attribution_method": "reconstruction_error_decomposition",
-        "attribution_note": "attribution_share_pct indicates relative contribution to observed reconstruction deviation (sums to 100%), not a Bayesian posterior probability."
+        "attribution_note": "attribution_share_pct indicates relative error decomposition; calibrated_probability_pct provides temperature-scaled Softmax confidence."
     }
 
 
@@ -217,7 +233,6 @@ def score_rows(
                 X_filled = np.where(np.isfinite(aligned), aligned, medians[None, :])
                 X_norm = ((X_filled - mean) / std).astype(np.float32)
 
-                num_windows = N - WINDOW_SIZE + 1
                 windows = np.lib.stride_tricks.sliding_window_view(X_norm, (WINDOW_SIZE, X_norm.shape[1])).squeeze(1).copy()
 
                 tensor_in = torch.from_numpy(windows)
@@ -282,7 +297,6 @@ def score_rows(
             scores = [score_val] * N
         else:
             # Compute 30-step sliding summary features
-            num_windows = N - WINDOW_SIZE + 1
             windows = np.lib.stride_tricks.sliding_window_view(aligned, (WINDOW_SIZE, aligned.shape[1])).squeeze(1)
             w_mean = np.nanmean(windows, axis=1)
             w_std = np.nanstd(windows, axis=1)
@@ -296,8 +310,11 @@ def score_rows(
         # Feature z-score deviations from normal training baseline
         means = iforest_data.get("train_metric_means", np.zeros(len(features)))
         stds = iforest_data.get("train_metric_stds", np.ones(len(features)))
-        row_mean = np.nanmean(aligned, axis=0)
-        deviations = np.abs(np.nan_to_num(row_mean - means, nan=0.0)) / (stds + 1e-6)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            row_mean = np.nanmean(aligned, axis=0)
+            row_mean = np.nan_to_num(row_mean, nan=0.0)
+        deviations = np.abs(row_mean - means) / (stds + 1e-6)
         rca = _aggregate_root_cause(features, deviations)
 
         return {

@@ -1,8 +1,9 @@
 """Unit Tests for RCAEval Telemetry Ingestion, Case Discovery, and Leak-Free Windowing."""
 
 from pathlib import Path
+
 import pytest
-import pandas as pd
+
 from ml_engine.data import discover_cases, read_metrics
 
 
