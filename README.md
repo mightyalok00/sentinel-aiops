@@ -1,6 +1,6 @@
 # 🛡️ SENTINEL AI — Multimodal AIOps & Root Cause Intelligence Platform
 
-[![CI Pipeline](https://github.com/mightyalok00/sentinel-aiops/actions/workflows/ci.yml/badge.svg)](https://github.com/mightyalok00/sentinel-aiops/actions/workflows/ci.yml)
+[![CI Pipeline](https://github.com/mightyalok00/sentinel-aiops/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mightyalok00/sentinel-aiops/actions/workflows/ci.yml)
 [![Run Workflow](https://img.shields.io/badge/GitHub%20Actions-Run%20Workflow-2088FF?logo=githubactions&logoColor=white)](https://github.com/mightyalok00/sentinel-aiops/actions/workflows/ci.yml)
 [![Security: Bandit](https://img.shields.io/badge/Security-Bandit%20Passed-44CC11.svg?logo=security)](https://github.com/mightyalok00/sentinel-aiops/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-blue?logo=python)](https://www.python.org/)
