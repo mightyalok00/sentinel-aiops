@@ -13,8 +13,8 @@ training baseline using:
 from typing import Any
 
 import numpy as np
-import pandas as pd
-from scipy import stats
+import pandas as pd  # type: ignore # pyrefly: ignore
+from scipy import stats  # type: ignore # pyrefly: ignore
 
 from backend.scoring import load_isolation_forest, load_lstm_autoencoder
 
@@ -78,7 +78,7 @@ def monitor_telemetry_drift(
         dict[str, Any]: Comprehensive drift report including overall PSI, drifted features,
         per-feature metrics, and operational recommendations.
     """
-    if not rows:
+    if rows is None or (isinstance(rows, (list, dict)) and len(rows) == 0) or (isinstance(rows, pd.DataFrame) and rows.empty):
         return {
             "drift_detected": False,
             "drift_severity": "none",

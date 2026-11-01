@@ -21,7 +21,7 @@ from typing import Any, Optional
 
 import joblib
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore # pyrefly: ignore
 import torch
 from numpy.lib.stride_tricks import sliding_window_view
 

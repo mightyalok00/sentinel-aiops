@@ -36,7 +36,7 @@ def _get_redis() -> Optional[Any]:
     _REDIS_INITIALIZED = True
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     try:
-        import redis  # type: ignore[import-untyped]
+        import redis  # type: ignore # pyrefly: ignore
         client: Any = redis.Redis.from_url(
             redis_url,
             socket_connect_timeout=0.5,
@@ -105,6 +105,13 @@ def cache_set(key: str, value: Any, ttl_seconds: int = 300) -> None:
 
     # In-memory fallback
     _MEMORY_CACHE[key] = (val_str, time.time() + ttl_seconds)
+
+
+def clear_cache() -> None:
+    """Clears all entries in local in-memory cache and rate limiter stores."""
+    global _MEMORY_CACHE, _RATE_LIMIT_STORE
+    _MEMORY_CACHE.clear()
+    _RATE_LIMIT_STORE.clear()
 
 
 def check_rate_limit(client_id: str, max_requests: int = 120, window_seconds: int = 60) -> bool:

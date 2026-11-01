@@ -22,14 +22,22 @@ from pathlib import Path
 from typing import Any, Optional
 
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore # pyrefly: ignore
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from backend.cache import cache_get, cache_set, check_rate_limit
 from backend.postmortem import generate_incident_postmortem
 from backend.scoring import score_rows
+from backend.security import (
+    MAX_PAYLOAD_BYTES,
+    add_security_headers,
+    constant_time_compare,
+    is_payload_too_large,
+    sanitize_log_dict,
+)
 from ml_engine.drift import monitor_telemetry_drift
 from ml_engine.multimodal import analyze_logs, analyze_traces, fuse_multimodal_evidence
 
@@ -75,6 +83,15 @@ app = FastAPI(
     description="Enterprise AIOps Multimodal Telemetry Anomaly Scoring, Root Cause Analysis & Autonomous Incident Triage Platform.",
     docs_url="/docs",
     redoc_url="/redoc"
+)
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[orig.strip() for orig in os.getenv("ALLOWED_ORIGINS", "*").split(",") if orig.strip()],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 
@@ -130,13 +147,19 @@ def require_role(min_role: str = "viewer"):
         if not API_KEYS_ROLES:
             return "admin"
 
-        if not x_api_key or x_api_key not in API_KEYS_ROLES:
+        assigned_role = None
+        if x_api_key:
+            for valid_key, role in API_KEYS_ROLES.items():
+                if constant_time_compare(x_api_key, valid_key):
+                    assigned_role = role
+                    break
+
+        if not assigned_role:
             raise HTTPException(
                 status_code=401,
                 detail="Unauthorized: Missing or invalid 'X-API-Key' header."
             )
 
-        assigned_role = API_KEYS_ROLES[x_api_key]
         if ROLE_LEVELS.get(assigned_role, 0) < ROLE_LEVELS.get(min_role, 1):
             raise HTTPException(
                 status_code=403,
@@ -157,14 +180,22 @@ verify_api_key = require_role("viewer")
 # -----------------------------------------------------------------------------
 @app.middleware("http")
 async def operational_middleware(request: Request, call_next: Any) -> Response:
-    """Enforces token-bucket rate limits and logs structured JSON telemetry per request."""
+    """Enforces token-bucket rate limits, payload size caps, security headers, and structured JSON telemetry."""
+    # 1. Payload size limit
+    content_length = request.headers.get("content-length")
+    if is_payload_too_large(content_length):
+        return JSONResponse(
+            status_code=413,
+            content={"detail": f"Payload too large. Maximum permitted request body is {MAX_PAYLOAD_BYTES // (1024 * 1024)} MB."}
+        )
+
     client_ip = request.client.host if request.client else "127.0.0.1"
     path = request.url.path
     method = request.method
     request_id = str(uuid.uuid4())
     start_time = time.perf_counter()
 
-    # Rate limiting on compute-intensive inference endpoints
+    # 2. Rate limiting on compute-intensive inference endpoints
     if path.startswith("/api/v1/score") or path.startswith("/api/v1/postmortem") or path.startswith("/api/v1/otel"):
         if not check_rate_limit(client_ip, max_requests=120, window_seconds=60):
             return JSONResponse(
@@ -172,15 +203,18 @@ async def operational_middleware(request: Request, call_next: Any) -> Response:
                 content={"detail": "Rate limit exceeded: Maximum 120 requests per minute permitted."}
             )
 
-    response = await call_next(request)
+    response: Response = await call_next(request)
     duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
     status_code = response.status_code
 
-    # Record Prometheus request counter
+    # 3. Defensive OWASP security headers
+    add_security_headers(response.headers)
+
+    # 4. Record Prometheus request counter
     key = (path, str(status_code))
     _METRICS_STATE["requests_total"][key] = _METRICS_STATE["requests_total"].get(key, 0) + 1
 
-    # Structured JSON log entry
+    # 5. Structured JSON log entry (sanitizing any sensitive data)
     if not path.startswith("/static") and path != "/metrics":
         log_payload = {
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -191,7 +225,7 @@ async def operational_middleware(request: Request, call_next: Any) -> Response:
             "duration_ms": duration_ms,
             "client_ip": client_ip
         }
-        logger.info(json.dumps(log_payload))
+        logger.info(json.dumps(sanitize_log_dict(log_payload)))
 
     return response
 
@@ -201,26 +235,26 @@ async def operational_middleware(request: Request, call_next: Any) -> Response:
 # -----------------------------------------------------------------------------
 class ScoreRequest(BaseModel):
     """Schema for incoming telemetry anomaly scoring requests."""
-    rows: list[dict[str, Any]] = Field(..., min_length=1, description="List of metric dictionaries across time steps.")
-    model: str = Field(default="lstm", description="Inference engine: 'lstm' (LSTM Autoencoder) or 'iforest' (Isolation Forest).")
-    threshold: float = Field(default=0.0, description="Optional custom anomaly threshold override; 0.0 uses calibrated value.")
+    rows: list[dict[str, Any]] = Field(..., min_length=1, max_length=10000, description="List of metric dictionaries across time steps.")
+    model: str = Field(default="lstm", max_length=50, description="Inference engine: 'lstm' (LSTM Autoencoder) or 'iforest' (Isolation Forest).")
+    threshold: float = Field(default=0.0, ge=0.0, le=1000.0, description="Optional custom anomaly threshold override; 0.0 uses calibrated value.")
     check_drift: bool = Field(default=True, description="Whether to evaluate statistical feature distribution drift.")
 
 
 class DriftRequest(BaseModel):
     """Schema for telemetry distribution drift monitoring requests."""
-    rows: list[dict[str, Any]] = Field(..., min_length=1, description="List of metric dictionaries to evaluate against baseline.")
+    rows: list[dict[str, Any]] = Field(..., min_length=1, max_length=10000, description="List of metric dictionaries to evaluate against baseline.")
 
 
 class PostMortemRequest(BaseModel):
     """Schema for incident post-mortem generation requests."""
-    case_id: str = Field(default="incident-live", description="Benchmark case ID or live incident tracking number.")
-    service: str = Field(default="adservice", description="Suspect primary faulty microservice.")
-    metric: str = Field(default="cpu_usage", description="Primary anomalous metric symptom.")
-    model: str = Field(default="PyTorch LSTM Autoencoder", description="Model identifying the incident.")
-    confidence: float = Field(default=95.2, description="Attribution share percentage or confidence.")
-    score: float = Field(default=0.045, description="Overall telemetry reconstruction error or anomaly score.")
-    threshold: float = Field(default=0.018, description="Anomaly decision threshold.")
+    case_id: str = Field(default="incident-live", max_length=100, description="Benchmark case ID or live incident tracking number.")
+    service: str = Field(default="adservice", max_length=100, description="Suspect primary faulty microservice.")
+    metric: str = Field(default="cpu_usage", max_length=100, description="Primary anomalous metric symptom.")
+    model: str = Field(default="PyTorch LSTM Autoencoder", max_length=100, description="Model identifying the incident.")
+    confidence: float = Field(default=95.2, ge=0.0, le=100.0, description="Attribution share percentage or confidence.")
+    score: float = Field(default=0.045, ge=0.0, description="Overall telemetry reconstruction error or anomaly score.")
+    threshold: float = Field(default=0.018, ge=0.0, description="Anomaly decision threshold.")
 
 
 class OTelMetricsPayload(BaseModel):

@@ -43,8 +43,8 @@ def evaluate_models(data_dir: Path, artifacts_dir: Path) -> dict[str, Any]:
     }
 
 
-def main() -> None:
-    """Parses command-line arguments and dispatches corresponding subcommands."""
+def build_parser() -> argparse.ArgumentParser:
+    """Builds and returns the top-level argument parser with all subcommands."""
     parser = argparse.ArgumentParser(
         description="SENTINEL AI: AIOps Telemetry Anomaly Scoring & Root Cause Analysis CLI"
     )
@@ -104,6 +104,12 @@ def main() -> None:
     p_vchk.add_argument("--data-dir", type=Path, default=Path("data/rcaeval"), help="Raw benchmark dataset folder")
     p_vchk.add_argument("--manifest", type=Path, default=Path("data/checksums.json"), help="Manifest path to verify")
 
+    return parser
+
+
+def main() -> None:
+    """Parses command-line arguments and dispatches corresponding subcommands."""
+    parser = build_parser()
     args = parser.parse_args()
 
     if args.cmd == "download":

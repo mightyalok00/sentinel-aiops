@@ -28,7 +28,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install ruff pytest-cov httpx
+          pip install ruff pytest-cov httpx bandit
 
       - name: Seed Test Data Fixture
         run: |
@@ -39,6 +39,10 @@ jobs:
       - name: Lint with Ruff
         run: |
           ruff check . --ignore E501
+
+      - name: Security Audit with Bandit
+        run: |
+          bandit -r backend/ ml_engine/ -ll -q
 
       - name: Run Pytest Test Suite
         env:

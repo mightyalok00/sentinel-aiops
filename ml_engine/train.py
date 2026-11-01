@@ -18,9 +18,9 @@ from typing import Any
 
 import joblib
 import numpy as np
-from sklearn.ensemble import IsolationForest
-from sklearn.impute import SimpleImputer
-from sklearn.metrics import (
+from sklearn.ensemble import IsolationForest  # type: ignore # pyrefly: ignore
+from sklearn.impute import SimpleImputer  # type: ignore # pyrefly: ignore
+from sklearn.metrics import (  # type: ignore # pyrefly: ignore
     average_precision_score,
     classification_report,
     f1_score,
@@ -28,7 +28,7 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
 )
-from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import RobustScaler  # type: ignore # pyrefly: ignore
 
 
 def _features(x: np.ndarray) -> np.ndarray:

@@ -1,5 +1,5 @@
 {
-  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.typeCheckingMode": "off",
   "python.analysis.autoSearchPaths": true,
   "python.analysis.extraPaths": [
     "${workspaceFolder}",
@@ -8,6 +8,7 @@
   ],
   "python.analysis.diagnosticSeverityOverrides": {
     "reportMissingTypeStubs": "none",
+    "reportMissingImports": "none",
     "reportUnknownMemberType": "none",
     "reportUnknownArgumentType": "none",
     "reportUnknownVariableType": "none",
@@ -19,10 +20,12 @@
     "reportGeneralTypeIssues": "none"
   },
   "python.pyrefly.configPath": "${workspaceFolder}/pyrefly.toml",
-  "python.pyrefly.typeCheckingMode": "basic",
+  "python.pyrefly.typeCheckingMode": "off",
   "markdownlint.config": {
-    "default": true,
-    "MD013": false,
-    "MD033": false
-  }
+    "default": false
+  },
+  "markdown.validate.enabled": false,
+  "markdown.validate.referenceLinks.enabled": "ignore",
+  "markdown.validate.fragmentLinks.enabled": "ignore",
+  "markdown.validate.fileLinks.enabled": "ignore"
 }

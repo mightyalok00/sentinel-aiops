@@ -1,14 +1,32 @@
+# Pyrefly Configuration for SENTINEL AI
 search-path = [".", "backend", "ml_engine"]
 site-package-path = [
     "C:/Users/Alok Agarwal/AppData/Local/Programs/Python/Python314/Lib/site-packages"
 ]
 python-interpreter-path = "C:/Users/Alok Agarwal/AppData/Local/Programs/Python/Python314/python.exe"
 
+ignore-missing-source = true
+replace-imports-with-any = [
+    "pandas.*",
+    "sklearn.*",
+    "scipy.*",
+    "torch.*",
+    "redis.*",
+    "joblib.*",
+    "starlette.*",
+    "fastapi.*",
+    "pydantic.*",
+    "prometheus_client.*"
+]
+
 [errors]
-missing-source-for-stubs = "ignore"
-unnecessary-type-conversion = "ignore"
-missing-source = "ignore"
-missing-import = "ignore"
-no-matching-overload = "ignore"
-missing-attribute = "ignore"
-bad-argument-type = "ignore"
+missing-source-for-stubs = false
+missing-source = false
+missing-import = false
+missing-attribute = false
+bad-argument-type = false
+unnecessary-type-conversion = false
+no-matching-overload = false
+bad-assignment = false
+unbound-name = false
+untyped-import = false

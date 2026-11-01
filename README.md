@@ -5,7 +5,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-2.7.0-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.x%20(CUDA)-EE4C2C?logo=pytorch)](https://pytorch.org/)
 [![Docker](https://img.shields.io/badge/Docker%20Compose-Ready-2496ED?logo=docker)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-41%20Passed-brightgreen.svg)](https://github.com/mightyalok00/sentinel-aiops)
+[![Tests](https://img.shields.io/badge/Tests-60%2B%20Passed-brightgreen.svg)](https://github.com/mightyalok00/sentinel-aiops)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **Evidence-driven multimodal AIOps platform fusing time-series metrics, container logs, and distributed traces for real-time anomaly scoring, microservice fault localization, and automated SRE incident post-mortems.**
@@ -30,8 +30,10 @@
 - **Calibrated Root Cause Attribution (RCA)**: Decomposes reconstruction errors into `attribution_share_pct` (relative error share) and `calibrated_probability_pct` (temperature-scaled Softmax confidence).
 - **Empirical RCA Localization Benchmark**: Evaluated against ground-truth injection targets with **80.0% Hit@3** and **0.722 MRR**.
 - **Enterprise Security & Reliability**:
-  - **Role-Based Access Control (RBAC)**: Enforces `viewer`, `operator`, and `admin` permission boundaries.
-  - **Structured JSON Logging**: Standardized request trace logging (`request_id`, `duration_ms`, `client_ip`).
+  - **Role-Based Access Control (RBAC)**: Enforces `viewer`, `operator`, and `admin` permission boundaries with constant-time HMAC key verification.
+  - **Defensive HTTP Headers**: Comprehensive OWASP security headers (HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy).
+  - **Payload Size Limiting**: 10MB maximum request size mitigation preventing DoS memory exhaustion.
+  - **Sensitive Log Scrubbing**: Recursive credential and token sanitization across structured JSON log entries.
   - **Path Traversal Protection**: Regex validation and strict directory containment checks preventing `../` attacks.
   - **Rate Limiting**: Sliding-window rate limiting (120 req/min per IP) via Redis with in-memory fallback.
   - **Container Hardening**: Dockerfile configured to run as non-root user `appuser` (UID 1000).
@@ -84,9 +86,9 @@
 docker compose up -d --build
 ```
 
-- **Dashboard**: [http://localhost:8000/](http://localhost:8000/)
-- **Swagger API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Prometheus Metrics**: [http://localhost:8000/metrics](http://localhost:8000/metrics)
+- **Dashboard**: [Local Dashboard](http://localhost:8000/)
+- **Swagger API Docs**: [Interactive Swagger UI](http://localhost:8000/docs)
+- **Prometheus Metrics**: [OpenMetrics Exporter](http://localhost:8000/metrics)
 
 ### Option B: Local Python Development
 
@@ -136,8 +138,9 @@ SENTINEL-AI/
 ├── .github/
 │   └── workflows/ci.yml        # Matrix CI testing Python 3.11 & 3.12 (ruff + pytest)
 ├── backend/
-│   ├── app.py                  # FastAPI server with RBAC, OTel, Prometheus & logging
+│   ├── app.py                  # FastAPI server with RBAC, OTel, Prometheus, logging & security
 │   ├── scoring.py              # 30-step sliding window scoring & calibrated RCA
+│   ├── security.py             # Constant-time auth, OWASP headers, payload limit & log redaction
 │   ├── cache.py                # Hybrid Redis + in-memory TTL cache & rate limiting
 │   └── postmortem.py           # Automated SRE post-mortem report generator
 ├── ml_engine/
@@ -156,7 +159,7 @@ SENTINEL-AI/
 │   ├── rcaeval/                # RCAEval dataset junction (RE1 & RE2 benchmark cases)
 │   ├── processed/              # Windowed train.npz, val.npz, and test.npz partitions
 │   └── checksums.json          # Cryptographic SHA-256 verification manifest
-├── tests/                      # 41 unit, integration, and security tests
+├── tests/                      # 60+ unit, integration, and security tests
 ├── pyproject.toml              # Ruff, mypy, and pytest configurations
 ├── Dockerfile                  # Hardened non-root container image
 ├── docker-compose.yml          # Multi-container orchestration (FastAPI + Redis)
