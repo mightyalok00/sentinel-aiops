@@ -60,5 +60,6 @@ missing-source-for-stubs = "ignore"
 unnecessary-type-conversion = "ignore"
 missing-source = "ignore"
 missing-import = "ignore"
+no-matching-overload = "ignore"
 
 

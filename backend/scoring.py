@@ -348,7 +348,7 @@ def score_rows(
     scores = -model.score_samples(pipeline[:-1].transform(values))
     threshold = float(np.quantile(scores, 0.95))
     features = list(frame.columns)
-    deviations = np.nanstd(values, axis=0)
+    deviations = frame.std(axis=0, ddof=0).fillna(0.0).to_numpy(dtype=float)
     rca = _aggregate_root_cause(features, deviations)
 
     return {
