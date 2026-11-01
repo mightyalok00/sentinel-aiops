@@ -6,7 +6,10 @@ __pycache__
 venv
 ENV
 .pytest_cache
+.ruff_cache
 .git
 .gitignore
 *.log
-
+data/rcaeval/
+data/processed/
+.vscode/

@@ -1,9 +1,15 @@
 .venv/
+venv/
+ENV/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 .pytest_cache/
+.ruff_cache/
 .coverage
 .coverage.*
+htmlcov/
 .env
 
 # Raw and windowed dataset partitions (RCAEval benchmark files)
@@ -11,5 +17,14 @@ data/*
 !data/.gitkeep
 !data/checksums.json
 
-# System and temporary logs
+# System, IDE and temporary logs
 *.log
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db
+build/
+dist/
+*.egg-info/
