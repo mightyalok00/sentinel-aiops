@@ -1,3 +1,4 @@
+# pyrefly: ignore-errors[missing-source-for-stubs]
 """Telemetry Anomaly Scoring and Root Cause Analysis (RCA) Engine.
 
 This module provides production-grade inference pipelines for telemetry anomaly scoring:
@@ -331,10 +332,10 @@ def score_rows(
     # -------------------------------------------------------------------------
     # Route 3: Graceful Fallback (Local Uncalibrated Baseline)
     # -------------------------------------------------------------------------
-    from sklearn.ensemble import IsolationForest as FallbackIF
-    from sklearn.impute import SimpleImputer as FallbackImputer
-    from sklearn.pipeline import make_pipeline
-    from sklearn.preprocessing import RobustScaler as FallbackScaler
+    from sklearn.ensemble import IsolationForest as FallbackIF  # type: ignore # pyrefly: ignore
+    from sklearn.impute import SimpleImputer as FallbackImputer  # type: ignore # pyrefly: ignore
+    from sklearn.pipeline import make_pipeline  # type: ignore # pyrefly: ignore
+    from sklearn.preprocessing import RobustScaler as FallbackScaler  # type: ignore # pyrefly: ignore
 
     values = frame.to_numpy(dtype=float)
     pipeline = make_pipeline(
