@@ -36,8 +36,8 @@ def _get_redis() -> Optional[Any]:
     _REDIS_INITIALIZED = True
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     try:
-        import redis
-        client = redis.Redis.from_url(
+        import redis  # type: ignore[import-untyped]
+        client: Any = redis.Redis.from_url(
             redis_url,
             socket_connect_timeout=0.5,
             socket_timeout=0.5,

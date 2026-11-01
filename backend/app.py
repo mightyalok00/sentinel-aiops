@@ -156,7 +156,7 @@ verify_api_key = require_role("viewer")
 # Structured JSON Logging & Rate Limiting Middleware
 # -----------------------------------------------------------------------------
 @app.middleware("http")
-async def operational_middleware(request: Request, call_next):
+async def operational_middleware(request: Request, call_next: Any) -> Response:
     """Enforces token-bucket rate limits and logs structured JSON telemetry per request."""
     client_ip = request.client.host if request.client else "127.0.0.1"
     path = request.url.path

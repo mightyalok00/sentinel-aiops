@@ -22,6 +22,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import torch
+from numpy.lib.stride_tricks import sliding_window_view
 
 # Base project directory resolution
 ROOT = Path(__file__).resolve().parents[1]
@@ -233,7 +234,7 @@ def score_rows(
                 X_filled = np.where(np.isfinite(aligned), aligned, medians[None, :])
                 X_norm = ((X_filled - mean) / std).astype(np.float32)
 
-                windows = np.lib.stride_tricks.sliding_window_view(X_norm, (WINDOW_SIZE, X_norm.shape[1])).squeeze(1).copy()
+                windows = sliding_window_view(X_norm, (WINDOW_SIZE, X_norm.shape[1])).squeeze(1).copy()
 
                 tensor_in = torch.from_numpy(windows)
                 with torch.no_grad():
@@ -297,7 +298,7 @@ def score_rows(
             scores = [score_val] * N
         else:
             # Compute 30-step sliding summary features
-            windows = np.lib.stride_tricks.sliding_window_view(aligned, (WINDOW_SIZE, aligned.shape[1])).squeeze(1)
+            windows = sliding_window_view(aligned, (WINDOW_SIZE, aligned.shape[1])).squeeze(1)
             w_mean = np.nanmean(windows, axis=1)
             w_std = np.nanstd(windows, axis=1)
             w_min = np.nanmin(windows, axis=1)
