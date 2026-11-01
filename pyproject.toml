@@ -50,3 +50,13 @@ warn_unused_configs = true
 disallow_untyped_defs = false
 ignore_missing_imports = true
 
+[tool.pyrefly]
+search-path = [".", "backend", "ml_engine"]
+
+[tool.pyrefly.errors]
+missing-source-for-stubs = "ignore"
+unnecessary-type-conversion = "ignore"
+missing-source = "ignore"
+missing-import = "ignore"
+
+

@@ -18,6 +18,8 @@
     "reportOptionalMemberAccess": "none",
     "reportGeneralTypeIssues": "none"
   },
+  "python.pyrefly.configPath": "${workspaceFolder}/pyrefly.toml",
+  "python.pyrefly.typeCheckingMode": "basic",
   "markdownlint.config": {
     "default": true,
     "MD013": false,

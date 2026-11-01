@@ -1,0 +1,11 @@
+search-path = [".", "backend", "ml_engine"]
+site-package-path = [
+    "C:/Users/Alok Agarwal/AppData/Local/Programs/Python/Python314/Lib/site-packages"
+]
+python-interpreter = "C:/Users/Alok Agarwal/AppData/Local/Programs/Python/Python314/python.exe"
+
+[errors]
+missing-source-for-stubs = "ignore"
+unnecessary-type-conversion = "ignore"
+missing-source = "ignore"
+missing-import = "ignore"

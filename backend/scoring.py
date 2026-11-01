@@ -355,6 +355,6 @@ def score_rows(
         "scores": [float(x) for x in scores],
         "overall_score": float(np.mean(scores)),
         "threshold": threshold,
-        "feature_count": int(frame.shape[1]),
+        "feature_count": frame.shape[1],
         "root_cause_analysis": rca
     }
