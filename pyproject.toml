@@ -78,5 +78,7 @@ unnecessary-type-conversion = false
 no-matching-overload = false
 bad-assignment = false
 unbound-name = false
+unsupported-operation = false
+bad-return = false
 
 

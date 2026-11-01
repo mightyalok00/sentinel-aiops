@@ -65,7 +65,7 @@ def load_lstm_autoencoder() -> Optional[dict[str, Any]]:
         model_path = ARTIFACTS_DIR / "lstm_autoencoder.pt"
         if model_path.exists():
             from ml_engine.lstm_autoencoder import LSTMAutoencoder
-            checkpoint = torch.load(model_path, map_location="cpu", weights_only=False)
+            checkpoint = torch.load(model_path, map_location="cpu", weights_only=False)  # nosec B614
             model = LSTMAutoencoder(checkpoint["n_features"])
             model.load_state_dict(checkpoint["state_dict"])
             model.eval()

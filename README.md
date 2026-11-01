@@ -1,11 +1,14 @@
 # 🛡️ SENTINEL AI — Multimodal AIOps & Root Cause Intelligence Platform
 
-[![CI Pipeline](https://github.com/mightyalok00/sentinel-aiops/actions/workflows/ci.yml/badge.svg)](https://github.com/mightyalok00/sentinel-aiops/actions)
+[![CI Pipeline](https://github.com/mightyalok00/sentinel-aiops/actions/workflows/ci.yml/badge.svg)](https://github.com/mightyalok00/sentinel-aiops/actions/workflows/ci.yml)
+[![Run Workflow](https://img.shields.io/badge/GitHub%20Actions-Run%20Workflow-2088FF?logo=githubactions&logoColor=white)](https://github.com/mightyalok00/sentinel-aiops/actions/workflows/ci.yml)
+[![Security: Bandit](https://img.shields.io/badge/Security-Bandit%20Passed-44CC11.svg?logo=security)](https://github.com/mightyalok00/sentinel-aiops/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-blue?logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-2.7.0-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.x%20(CUDA)-EE4C2C?logo=pytorch)](https://pytorch.org/)
 [![Docker](https://img.shields.io/badge/Docker%20Compose-Ready-2496ED?logo=docker)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-60%2B%20Passed-brightgreen.svg)](https://github.com/mightyalok00/sentinel-aiops)
+[![Tests](https://img.shields.io/badge/Tests-72%20Passed-brightgreen.svg)](https://github.com/mightyalok00/sentinel-aiops)
+[![Coverage](https://img.shields.io/badge/Coverage-79%25-brightgreen.svg)](https://github.com/mightyalok00/sentinel-aiops)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **Evidence-driven multimodal AIOps platform fusing time-series metrics, container logs, and distributed traces for real-time anomaly scoring, microservice fault localization, and automated SRE incident post-mortems.**

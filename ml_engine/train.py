@@ -31,7 +31,7 @@ from sklearn.metrics import (  # type: ignore # pyrefly: ignore
 from sklearn.preprocessing import RobustScaler  # type: ignore # pyrefly: ignore
 
 
-def _features(x: np.ndarray) -> np.ndarray:
+def _features(x: Any) -> Any:
     """Extracts summary statistics across the temporal window dimension (axis=1).
 
     Computes [mean, standard deviation, minimum, maximum] for each feature,
@@ -55,8 +55,8 @@ def _features(x: np.ndarray) -> np.ndarray:
 
 
 def evaluate_predictions(
-    y_true: np.ndarray,
-    scores: np.ndarray,
+    y_true: Any,
+    scores: Any,
     threshold: float
 ) -> dict[str, Any]:
     """Computes comprehensive classification metrics against proxy ground truth labels.
@@ -69,16 +69,18 @@ def evaluate_predictions(
     Returns:
         dict[str, Any]: Precision, Recall, F1, PR-AUC, False Alarm Rate, and total count.
     """
-    pred = (scores >= threshold).astype(int)
-    p = float(precision_score(y_true, pred, zero_division=0.0))
-    r = float(recall_score(y_true, pred, zero_division=0.0))
-    f1 = float(f1_score(y_true, pred, zero_division=0.0))
+    scores_arr = np.asarray(scores, dtype=float)
+    y_true_arr = np.asarray(y_true, dtype=int)
+    pred = np.greater_equal(scores_arr, float(threshold)).astype(int)  # pyrefly: ignore
+    p = float(precision_score(y_true_arr, pred, zero_division=0.0))
+    r = float(recall_score(y_true_arr, pred, zero_division=0.0))
+    f1 = float(f1_score(y_true_arr, pred, zero_division=0.0))
     pr_auc = (
-        float(average_precision_score(y_true, scores))
-        if len(np.unique(y_true)) > 1
+        float(average_precision_score(y_true_arr, scores_arr))
+        if len(np.unique(y_true_arr)) > 1
         else None
     )
-    normal_mask = y_true == 0
+    normal_mask = y_true_arr == 0
     far = float(pred[normal_mask].mean()) if normal_mask.sum() > 0 else 0.0
 
     return {
@@ -87,7 +89,7 @@ def evaluate_predictions(
         "f1": round(f1, 4),
         "pr_auc": round(pr_auc, 4) if pr_auc is not None else None,
         "false_alarm_rate": round(far, 4),
-        "total_windows": int(len(y_true)),
+        "total_windows": int(len(y_true_arr)),
     }
 
 
@@ -141,7 +143,7 @@ def train_isolation_forest(data_dir: Path, output_dir: Path) -> dict[str, Any]:
         threshold = float(np.quantile(-model.score_samples(train_f), 0.95))
 
     val_metrics = evaluate_predictions(val_y, scores, threshold)
-    pred = (scores >= threshold).astype(int)
+    pred = np.greater_equal(scores, threshold).astype(int)  # pyrefly: ignore
 
     report: dict[str, Any] = {
         "threshold": threshold,

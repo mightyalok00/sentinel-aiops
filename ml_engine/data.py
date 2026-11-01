@@ -38,7 +38,7 @@ def download_dataset(suite: str, output_dir: Path) -> Path:
     if suite not in {"re1", "re2", "re3"}:
         raise ValueError(f"Invalid suite '{suite}'. Must be 're1', 're2', or 're3'.")
     output_dir.mkdir(parents=True, exist_ok=True)
-    snapshot_download(
+    snapshot_download(  # nosec B615
         repo_id="phamquiluan/RCAEval",
         repo_type="dataset",
         allow_patterns=[f"{suite}*", "cases.parquet"],

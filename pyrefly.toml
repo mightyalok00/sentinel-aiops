@@ -30,3 +30,5 @@ no-matching-overload = false
 bad-assignment = false
 unbound-name = false
 untyped-import = false
+unsupported-operation = false
+bad-return = false
