@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+
+# Raw and windowed dataset partitions (RCAEval benchmark files)
+data/*
+!data/.gitkeep
+
+# System and temporary logs
+*.log

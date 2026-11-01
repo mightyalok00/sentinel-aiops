@@ -1,0 +1,47 @@
+{
+  "threshold": 0.41069037200916975,
+  "validation_metrics": {
+    "precision": 0.8119,
+    "recall": 0.7486,
+    "f1": 0.779,
+    "pr_auc": 0.8548,
+    "false_alarm_rate": 0.1774,
+    "total_windows": 11131
+  },
+  "classification_report": {
+    "0": {
+      "precision": 0.7618646920228879,
+      "recall": 0.8226421951662729,
+      "f1-score": 0.7910878112712975,
+      "support": 5503.0
+    },
+    "1": {
+      "precision": 0.8119098092117942,
+      "recall": 0.7485785358919688,
+      "f1-score": 0.7789590459461958,
+      "support": 5628.0
+    },
+    "accuracy": 0.7851945018417034,
+    "macro avg": {
+      "precision": 0.786887250617341,
+      "recall": 0.7856103655291209,
+      "f1-score": 0.7850234286087466,
+      "support": 11131.0
+    },
+    "weighted avg": {
+      "precision": 0.7871682514101096,
+      "recall": 0.7851945018417034,
+      "f1-score": 0.784955326207092,
+      "support": 11131.0
+    }
+  },
+  "caveat": "Injection-time proxy labels; interpret metrics cautiously.",
+  "test_metrics": {
+    "precision": 0.7778,
+    "recall": 0.6912,
+    "f1": 0.732,
+    "pr_auc": 0.754,
+    "false_alarm_rate": 0.1914,
+    "total_windows": 11522
+  }
+}
