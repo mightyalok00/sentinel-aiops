@@ -37,7 +37,7 @@ def generate_incident_postmortem(incident: dict[str, Any]) -> str:
     case_id = incident.get("case_id", "incident-live")
     suspect_services = incident.get("suspect_services", [])
     primary_service = suspect_services[0]["service"] if suspect_services else "unknown-service"
-    confidence = suspect_services[0].get("confidence_pct", 85.0) if suspect_services else 75.0
+    attribution_share = suspect_services[0].get("attribution_share_pct", suspect_services[0].get("confidence_pct", 85.0)) if suspect_services else 75.0
 
     fault_type = incident.get("fault_type", "resource_saturation / latency_spike")
     score = incident.get("overall_score", 0.85)
@@ -95,11 +95,11 @@ def generate_incident_postmortem(incident: dict[str, Any]) -> str:
 ---
 
 ## 1. Executive Summary
-At **{timestamp}**, Sentinel AI detected a statistically significant telemetry anomaly score of **`{score:.4f}`**, exceeding the calibrated anomaly threshold. Multi-modal correlation across time-series metrics, container error logs, and distributed traces isolates **`{primary_service}`** as the probable root cause with **{confidence}% confidence**.
+At **{timestamp}**, Sentinel AI detected a statistically significant telemetry anomaly score of **`{score:.4f}`**, exceeding the calibrated anomaly threshold. Multi-modal correlation across time-series metrics, container error logs, and distributed traces isolates **`{primary_service}`** as the probable root cause with **{attribution_share}% attribution share**.
 
 - **Root Cause Microservice**: **`{primary_service}`**
 - **Fault Signature**: `{fault_type.upper()}`
-- **Attribution Confidence**: **{confidence}%**
+- **Attribution Share**: **{attribution_share}%** (relative reconstruction contribution)
 - **Downstream Blast Radius**: Impacting user-facing endpoints via cascading RPC latency.
 
 ---

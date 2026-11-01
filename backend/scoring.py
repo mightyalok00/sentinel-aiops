@@ -3,11 +3,15 @@
 This module provides production-grade inference pipelines for telemetry anomaly scoring:
 1. Model Artifact Loading: Singleton in-memory caching of pre-trained Isolation Forest
    and PyTorch LSTM Autoencoder artifacts.
-2. Dynamic Feature Alignment: Ensures incoming streaming batches or windows are strictly
-   aligned with the schema established during training.
-3. Root Cause Attribution (RCA): Decomposes window-level and temporal reconstruction errors
-   across individual metrics and aggregates them by microservice topology to quantify
-   culprit service confidence.
+2. Dynamic Feature Alignment: Maps incoming raw telemetry records to the established training schema.
+3. Training-Consistent Sliding Windowing:
+   - Evaluates sequences strictly using 30-timestep sliding windows matching the training pipeline.
+   - Padds with baseline medians if input sequence length < 30.
+   - Prevents inference sequence length mismatch and score distribution drift.
+4. Relative Root Cause Attribution:
+   - Decomposes reconstruction errors across individual metrics and aggregates by microservice.
+   - Outputs `attribution_share_pct` (relative contribution to error), avoiding misrepresenting
+     relative deviation shares as Bayesian posterior probabilities.
 """
 
 from pathlib import Path
@@ -23,6 +27,8 @@ ARTIFACTS_DIR = ROOT / "artifacts"
 
 # Singleton model cache to avoid repeated disk I/O on concurrent requests
 _MODEL_CACHE: dict[str, Any] = {}
+
+WINDOW_SIZE: int = 30
 
 
 def load_isolation_forest() -> Optional[dict[str, Any]]:
@@ -77,9 +83,12 @@ def _aggregate_root_cause(
 ) -> dict[str, Any]:
     """Aggregates metric-level anomaly deviations by microservice to rank root causes.
 
-    Each metric name is assumed to follow the topology convention `<service>_<metric_name>`
-    (e.g., `checkoutservice_cpu`, `cartservice_latency`). Deviations are summed per service
-    and normalized into percentage confidence scores.
+    Metrics follow the microservice topology convention `<service>_<metric_name>`
+    (e.g., `checkoutservice_cpu`, `cartservice_latency`). Deviations are aggregated per service
+    and normalized into `attribution_share_pct` (relative share of total deviation).
+
+    Note: `attribution_share_pct` represents relative attribution contribution to the
+    observed anomaly deviation, NOT a Bayesian posterior probability.
 
     Args:
         features: List of feature names corresponding to indices in `metric_scores`.
@@ -87,7 +96,7 @@ def _aggregate_root_cause(
         top_k: Maximum number of suspect microservices to return in ranked order.
 
     Returns:
-        dict[str, Any]: Ranked suspect services with attribution scores and confidence percentages,
+        dict[str, Any]: Ranked suspect services with attribution scores and attribution share percentages,
         along with the top contributing individual metrics.
     """
     service_scores: dict[str, float] = {}
@@ -107,19 +116,22 @@ def _aggregate_root_cause(
         [
             {
                 "service": s,
-                "score": round(sc, 4),
-                "confidence_pct": round((sc / total) * 100, 1)
+                "attribution_score": round(sc, 4),
+                "attribution_share_pct": round((sc / total) * 100, 1),
+                "confidence_pct": round((sc / total) * 100, 1)  # Backward compatibility alias
             }
             for s, sc in service_scores.items()
         ],
-        key=lambda x: x["score"],
+        key=lambda x: x["attribution_score"],
         reverse=True
     )
     metric_attributions.sort(key=lambda x: x["anomaly_contribution"], reverse=True)
 
     return {
         "suspect_services": ranked_services[:top_k],
-        "top_contributing_metrics": metric_attributions[:5]
+        "top_contributing_metrics": metric_attributions[:5],
+        "attribution_method": "reconstruction_error_decomposition",
+        "attribution_note": "attribution_share_pct indicates relative contribution to observed reconstruction deviation (sums to 100%), not a Bayesian posterior probability."
     }
 
 
@@ -130,13 +142,10 @@ def score_rows(
 ) -> dict[str, Any]:
     """Infers anomaly scores and executes Root Cause Analysis on incoming telemetry batches.
 
-    Execution Pipeline:
-    1. Validation: Ensures input rows contain valid numeric metric values.
-    2. Alignment: Maps row columns to the feature schema expected by the active model.
-    3. Inference:
-       - LSTM Autoencoder: Computes temporal reconstruction loss MSE(x, x_hat).
-       - Isolation Forest: Computes window summary statistics [mean, std, min, max] and scores samples.
-    4. Attribution: Aggregates errors by microservice to output ranked culprits.
+    Enforces 30-timestep sliding windows to match the training pipeline distribution:
+    - If len(rows) < 30: Pads leading timestamps with baseline medians so sequence length is 30.
+    - If len(rows) >= 30: Slides 30-step temporal windows across time, scoring each window and
+      aligning step scores to the calibrated threshold.
 
     Args:
         rows: Sequence of metric records (dictionary per timestamp/step).
@@ -184,19 +193,45 @@ def score_rows(
                 else lstm_data["threshold"]
             )
 
-            # Impute missing values with baseline medians and standardize
-            X_filled = np.where(np.isfinite(aligned), aligned, medians[None, :])
-            X_norm = ((X_filled - mean) / std).astype(np.float32)
+            N = len(aligned)
 
-            # Model expects batch shape: (batch_size=1, sequence_length, n_features)
-            tensor_in = torch.from_numpy(X_norm).unsqueeze(0)
-            with torch.no_grad():
-                recon = lstm_data["model"](tensor_in).squeeze(0).numpy()
+            # Enforce 30-timestep windowing compatible with training:
+            if N < WINDOW_SIZE:
+                # Pad leading timesteps with baseline medians
+                pad_len = WINDOW_SIZE - N
+                pad_array = np.tile(medians[None, :], (pad_len, 1)).astype(np.float32)
+                full_seq = np.vstack([pad_array, aligned])
+                X_filled = np.where(np.isfinite(full_seq), full_seq, medians[None, :])
+                X_norm = ((X_filled - mean) / std).astype(np.float32)
 
-            # Point-wise squared reconstruction error e_it = (x_it - x_hat_it)^2
-            diff = (X_norm - recon) ** 2
-            row_scores = [float(s) for s in diff.mean(axis=1)]
-            metric_errors = diff.mean(axis=0)
+                tensor_in = torch.from_numpy(X_norm).unsqueeze(0)
+                with torch.no_grad():
+                    recon = lstm_data["model"](tensor_in).squeeze(0).numpy()
+
+                diff = (X_norm - recon) ** 2
+                diff_actual = diff[pad_len:]
+                row_scores = [float(s) for s in diff_actual.mean(axis=1)]
+                metric_errors = diff_actual.mean(axis=0)
+            else:
+                # Sliding 30-timestep windows across sequence
+                X_filled = np.where(np.isfinite(aligned), aligned, medians[None, :])
+                X_norm = ((X_filled - mean) / std).astype(np.float32)
+
+                num_windows = N - WINDOW_SIZE + 1
+                windows = np.lib.stride_tricks.sliding_window_view(X_norm, (WINDOW_SIZE, X_norm.shape[1])).squeeze(1).copy()
+
+                tensor_in = torch.from_numpy(windows)
+                with torch.no_grad():
+                    recon = lstm_data["model"](tensor_in).numpy()
+
+                diff = (windows - recon) ** 2
+                window_scores = diff.mean(axis=(1, 2))  # shape: (num_windows,)
+
+                # Map window scores back to timestamps:
+                # Timestamps 0..WINDOW_SIZE-2 inherit window 0's score; subsequent timestamps get their window's score
+                row_scores = [float(window_scores[0])] * (WINDOW_SIZE - 1) + [float(s) for s in window_scores]
+                metric_errors = diff.mean(axis=(0, 1))
+
             rca = _aggregate_root_cause(features, metric_errors)
 
             return {
@@ -205,6 +240,7 @@ def score_rows(
                 "overall_score": float(np.mean(row_scores)),
                 "threshold": threshold,
                 "feature_count": len(features),
+                "window_size_used": WINDOW_SIZE,
                 "root_cause_analysis": rca
             }
 
@@ -229,18 +265,33 @@ def score_rows(
         scaler = iforest_data["scaler"]
         model = iforest_data["model"]
 
-        # Compute summary statistics across the sliding window
-        if len(aligned) == 1:
-            row_stats = np.concatenate([aligned, np.zeros_like(aligned), aligned, aligned], axis=1)
-        else:
-            w_mean = np.nanmean(aligned, axis=0, keepdims=True)
-            w_std = np.nanstd(aligned, axis=0, keepdims=True)
-            w_min = np.nanmin(aligned, axis=0, keepdims=True)
-            w_max = np.nanmax(aligned, axis=0, keepdims=True)
+        N = len(aligned)
+        if N < WINDOW_SIZE:
+            # Impute and pad
+            medians = iforest_data.get("train_metric_means", np.zeros(len(features)))
+            pad_len = WINDOW_SIZE - N
+            pad_array = np.tile(medians[None, :], (pad_len, 1)).astype(np.float32)
+            full_seq = np.vstack([pad_array, aligned])
+            w_mean = np.nanmean(full_seq, axis=0, keepdims=True)
+            w_std = np.nanstd(full_seq, axis=0, keepdims=True)
+            w_min = np.nanmin(full_seq, axis=0, keepdims=True)
+            w_max = np.nanmax(full_seq, axis=0, keepdims=True)
             row_stats = np.concatenate([w_mean, w_std, w_min, w_max], axis=1)
-
-        imputed_scaled = scaler.transform(imputer.transform(row_stats))
-        score_val = float(-model.score_samples(imputed_scaled)[0])
+            imputed_scaled = scaler.transform(imputer.transform(row_stats))
+            score_val = float(-model.score_samples(imputed_scaled)[0])
+            scores = [score_val] * N
+        else:
+            # Compute 30-step sliding summary features
+            num_windows = N - WINDOW_SIZE + 1
+            windows = np.lib.stride_tricks.sliding_window_view(aligned, (WINDOW_SIZE, aligned.shape[1])).squeeze(1)
+            w_mean = np.nanmean(windows, axis=1)
+            w_std = np.nanstd(windows, axis=1)
+            w_min = np.nanmin(windows, axis=1)
+            w_max = np.nanmax(windows, axis=1)
+            row_stats = np.concatenate([w_mean, w_std, w_min, w_max], axis=1)
+            imputed_scaled = scaler.transform(imputer.transform(row_stats))
+            w_scores = -model.score_samples(imputed_scaled)
+            scores = [float(w_scores[0])] * (WINDOW_SIZE - 1) + [float(s) for s in w_scores]
 
         # Feature z-score deviations from normal training baseline
         means = iforest_data.get("train_metric_means", np.zeros(len(features)))
@@ -249,13 +300,13 @@ def score_rows(
         deviations = np.abs(np.nan_to_num(row_mean - means, nan=0.0)) / (stds + 1e-6)
         rca = _aggregate_root_cause(features, deviations)
 
-        scores = [score_val] * len(frame)
         return {
             "model": "Isolation Forest (Pre-trained)",
             "scores": scores,
-            "overall_score": score_val,
+            "overall_score": float(np.mean(scores)),
             "threshold": threshold,
             "feature_count": len(features),
+            "window_size_used": WINDOW_SIZE,
             "root_cause_analysis": rca
         }
 

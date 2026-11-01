@@ -222,7 +222,8 @@ def fuse_multimodal_evidence(
     # 1. Metric contribution (50% weight)
     for item in metric_rca.get("suspect_services", []):
         srv = item["service"]
-        fused_attribution[srv] = fused_attribution.get(srv, 0.0) + (item["confidence_pct"] * 0.5)
+        share = item.get("attribution_share_pct", item.get("confidence_pct", 50.0))
+        fused_attribution[srv] = fused_attribution.get(srv, 0.0) + (share * 0.5)
 
     # 2. Log error burst contribution (35% weight)
     service_errs = logs_info.get("service_error_counts", {})
@@ -235,19 +236,20 @@ def fuse_multimodal_evidence(
         srv = srv_info["service"]
         fused_attribution[srv] = fused_attribution.get(srv, 0.0) + 15.0
 
-    # Normalize fused confidence into percentages
+    # Normalize fused attribution share into percentages
     total_conf = sum(fused_attribution.values()) or 1.0
     ranked_fused_services = sorted(
         [
             {
                 "service": srv,
-                "confidence_pct": round((val / total_conf) * 100, 1),
+                "attribution_share_pct": round((val / total_conf) * 100, 1),
+                "confidence_pct": round((val / total_conf) * 100, 1),  # Backward compatibility alias
                 "has_metric_anomaly": any(x["service"] == srv for x in metric_rca.get("suspect_services", [])),
                 "log_errors": service_errs.get(srv, 0)
             }
             for srv, val in fused_attribution.items()
         ],
-        key=lambda x: x["confidence_pct"],
+        key=lambda x: x["attribution_share_pct"],
         reverse=True
     )
 

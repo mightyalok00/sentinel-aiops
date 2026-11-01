@@ -206,12 +206,13 @@ def attribute_root_cause(
         [
             {
                 "service": s,
-                "score": round(sc, 3),
-                "confidence_pct": round((sc / total) * 100, 1),
+                "attribution_score": round(sc, 3),
+                "attribution_share_pct": round((sc / total) * 100, 1),
+                "confidence_pct": round((sc / total) * 100, 1),  # Backward compatibility alias
             }
             for s, sc in service_scores.items()
         ],
-        key=lambda x: x["score"],
+        key=lambda x: x["attribution_score"],
         reverse=True,
     )
     metric_attributions.sort(key=lambda x: x["deviation"], reverse=True)
@@ -219,4 +220,6 @@ def attribute_root_cause(
     return {
         "suspect_services": ranked_services[:top_k],
         "top_contributing_metrics": metric_attributions[:5],
+        "attribution_method": "metric_deviation_decomposition",
+        "attribution_note": "attribution_share_pct represents the relative proportion of observed deviation, not a Bayesian posterior probability."
     }

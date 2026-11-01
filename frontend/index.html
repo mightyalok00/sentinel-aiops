@@ -339,10 +339,12 @@
         rcaList.innerHTML = '';
         if (rca && rca.suspect_services && rca.suspect_services.length > 0) {
           const topService = rca.suspect_services[0];
+          const topShare = topService.attribution_share_pct || topService.confidence_pct;
           document.getElementById('kpi-rca').textContent = topService.service.toUpperCase();
-          document.getElementById('kpi-rca-sub').textContent = `${topService.confidence_pct}% attribution confidence`;
+          document.getElementById('kpi-rca-sub').textContent = `${topShare}% relative attribution share`;
 
           rca.suspect_services.forEach((s, idx) => {
+            const shareVal = s.attribution_share_pct || s.confidence_pct;
             const item = document.createElement('div');
             item.className = 'rca-item';
             item.innerHTML = `
@@ -351,8 +353,8 @@
                 <span>${s.service}</span>
               </div>
               <div style="text-align: right">
-                <div style="font-weight: 700; font-size: 13px">${s.confidence_pct}%</div>
-                <div class="pct-bar-bg"><div class="pct-bar-fill" style="width: ${s.confidence_pct}%"></div></div>
+                <div style="font-weight: 700; font-size: 13px">${shareVal}%</div>
+                <div class="pct-bar-bg"><div class="pct-bar-fill" style="width: ${shareVal}%"></div></div>
               </div>
             `;
             rcaList.appendChild(item);
