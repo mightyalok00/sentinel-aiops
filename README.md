@@ -43,12 +43,14 @@
 ## 📊 Model Benchmark Results (Held-Out Test Set: 11,522 Windows)
 
 ### Anomaly Detection Performance
+
 | Model Architecture | Precision | Recall | F1-Score | PR-AUC | False Alarm Rate (FAR) | Role |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **PyTorch LSTM Autoencoder** (CUDA) | **95.6%** | **87.0%** | **91.1%** | **91.4%** | **3.8%** | **Primary Engine** |
 | **Isolation Forest Baseline** | 77.8% | 69.1% | 73.2% | 75.4% | 19.1% | Classical ML Baseline |
 
 ### Root Cause Localization Accuracy (Empirical Benchmark)
+
 | Metric | Benchmark Score | Description |
 | :--- | :--- | :--- |
 | **Hit@1 (Top-1 Accuracy)** | **66.7%** | True faulty microservice ranked #1 suspect |
@@ -77,14 +79,17 @@
 ## 🚀 Quick Start
 
 ### Option A: Run with Docker Compose (Recommended)
+
 ```bash
 docker compose up -d --build
 ```
-* **Dashboard**: [http://localhost:8000/](http://localhost:8000/)
-* **Swagger API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-* **Prometheus Metrics**: [http://localhost:8000/metrics](http://localhost:8000/metrics)
+
+- **Dashboard**: [http://localhost:8000/](http://localhost:8000/)
+- **Swagger API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Prometheus Metrics**: [http://localhost:8000/metrics](http://localhost:8000/metrics)
 
 ### Option B: Local Python Development
+
 ```powershell
 # 1. Install dependencies
 pip install -r requirements.txt
@@ -116,7 +121,7 @@ uvicorn backend.app:app --reload --port 8000
 | `GET` | `/api/v1/cases/{case_id}` | Public | Telemetry time-series, log summaries, and trace stats. |
 | `POST` | `/api/v1/score` | Operator | Scores telemetry batches with 30-step sliding windows and drift check. |
 | `POST` | `/api/v1/drift` | Operator | Evaluates feature distribution drift via PSI & KS-tests. |
-| `POST` | `/api/v1/otel/v1/metrics`| Operator | Ingests OpenTelemetry (OTLP) JSON metrics. |
+| `POST` | `/api/v1/otel/v1/metrics` | Operator | Ingests OpenTelemetry (OTLP) JSON metrics. |
 | `POST` | `/api/v1/otel/v1/traces` | Operator | Ingests OpenTelemetry (OTLP) distributed traces. |
 | `POST` | `/api/v1/triage-multimodal/{case_id}` | Operator | Unified cross-modal incident triage (metrics + logs + traces). |
 | `POST` | `/api/v1/postmortem` | Operator | Generates an SRE incident post-mortem with Kubernetes runbooks. |
@@ -126,7 +131,7 @@ uvicorn backend.app:app --reload --port 8000
 
 ## 🏗️ Project Architecture
 
-```
+```text
 SENTINEL-AI/
 ├── .github/
 │   └── workflows/ci.yml        # Matrix CI testing Python 3.11 & 3.12 (ruff + pytest)
@@ -163,5 +168,6 @@ SENTINEL-AI/
 ---
 
 ## 📜 Attribution & License
-* **Dataset Attribution**: RCAEval benchmark dataset ([GitHub: phamquiluan/RCAEval](https://github.com/phamquiluan/RCAEval)).
-* **License**: MIT License.
+
+- **Dataset Attribution**: RCAEval benchmark dataset ([GitHub: phamquiluan/RCAEval](https://github.com/phamquiluan/RCAEval)).
+- **License**: MIT License.

@@ -121,7 +121,8 @@ def monitor_telemetry_drift(
         if feat not in df.columns:
             continue
 
-        actual_vals = pd.to_numeric(df[feat], errors="coerce").dropna().to_numpy()
+        series_col = pd.Series(df[feat].to_numpy())
+        actual_vals = pd.to_numeric(series_col, errors="coerce").dropna().to_numpy()
         if len(actual_vals) < 5:
             continue
 
@@ -139,7 +140,9 @@ def monitor_telemetry_drift(
         feature_psi_scores.append(psi)
 
         # 2-sample KS test
-        ks_stat, p_value = stats.ks_2samp(actual_vals, simulated_baseline)
+        ks_res = stats.ks_2samp(actual_vals, simulated_baseline)
+        ks_stat = float(ks_res.statistic)
+        p_value = float(ks_res.pvalue)
 
         if psi >= 0.25 or (p_value < alpha and ks_stat > 0.40):
             service = feat.split("_")[0]
@@ -147,7 +150,7 @@ def monitor_telemetry_drift(
                 "feature": feat,
                 "service": service,
                 "psi": round(psi, 3),
-                "ks_statistic": round(float(ks_stat), 3),
+                "ks_statistic": round(ks_stat, 3),
                 "p_value": float(f"{p_value:.2e}"),
                 "actual_mean": round(float(np.mean(actual_vals)), 3),
                 "baseline_mean": round(b_mean, 3)

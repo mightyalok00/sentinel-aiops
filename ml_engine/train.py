@@ -70,9 +70,9 @@ def evaluate_predictions(
         dict[str, Any]: Precision, Recall, F1, PR-AUC, False Alarm Rate, and total count.
     """
     pred = (scores >= threshold).astype(int)
-    p = float(precision_score(y_true, pred, zero_division=0))
-    r = float(recall_score(y_true, pred, zero_division=0))
-    f1 = float(f1_score(y_true, pred, zero_division=0))
+    p = float(precision_score(y_true, pred, zero_division=0.0))
+    r = float(recall_score(y_true, pred, zero_division=0.0))
+    f1 = float(f1_score(y_true, pred, zero_division=0.0))
     pr_auc = (
         float(average_precision_score(y_true, scores))
         if len(np.unique(y_true)) > 1
@@ -146,7 +146,7 @@ def train_isolation_forest(data_dir: Path, output_dir: Path) -> dict[str, Any]:
     report: dict[str, Any] = {
         "threshold": threshold,
         "validation_metrics": val_metrics,
-        "classification_report": classification_report(val_y, pred, output_dict=True, zero_division=0),
+        "classification_report": classification_report(val_y, pred, output_dict=True, zero_division=0.0),
         "caveat": "Injection-time proxy labels; interpret metrics cautiously.",
     }
 

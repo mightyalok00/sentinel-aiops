@@ -219,9 +219,9 @@ def train_autoencoder(
         threshold = float(np.quantile(val_scores, 0.95))
 
     val_pred = (val_scores >= threshold).astype(int)
-    val_p = float(precision_score(val_y, val_pred, zero_division=0))
-    val_r = float(recall_score(val_y, val_pred, zero_division=0))
-    val_f1 = float(f1_score(val_y, val_pred, zero_division=0))
+    val_p = float(precision_score(val_y, val_pred, zero_division=0.0))
+    val_r = float(recall_score(val_y, val_pred, zero_division=0.0))
+    val_f1 = float(f1_score(val_y, val_pred, zero_division=0.0))
     val_pr_auc = float(average_precision_score(val_y, val_scores)) if len(np.unique(val_y)) > 1 else None
     far = float(val_pred[val_y == 0].mean()) if (val_y == 0).sum() > 0 else 0.0
 
@@ -250,9 +250,9 @@ def train_autoencoder(
             X_test_norm = _normalize_windows(test_x, medians, mean, std)
             test_scores, _ = compute_reconstruction_errors(model, X_test_norm, device)
             test_pred = (test_scores >= threshold).astype(int)
-            test_p = float(precision_score(test_y, test_pred, zero_division=0))
-            test_r = float(recall_score(test_y, test_pred, zero_division=0))
-            test_f1 = float(f1_score(test_y, test_pred, zero_division=0))
+            test_p = float(precision_score(test_y, test_pred, zero_division=0.0))
+            test_r = float(recall_score(test_y, test_pred, zero_division=0.0))
+            test_f1 = float(f1_score(test_y, test_pred, zero_division=0.0))
             test_pr_auc = float(average_precision_score(test_y, test_scores)) if len(np.unique(test_y)) > 1 else None
             test_far = float(test_pred[test_y == 0].mean()) if (test_y == 0).sum() > 0 else 0.0
             report["test_metrics"] = {

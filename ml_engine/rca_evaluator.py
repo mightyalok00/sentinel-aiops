@@ -117,7 +117,8 @@ def evaluate_rca_benchmark(
             else:
                 eval_df = df.tail(60)
 
-            rows = eval_df.drop(columns=["time"], errors="ignore").to_dict(orient="records")
+            clean_df = eval_df.drop(columns=["time"], errors="ignore")
+            rows: list[dict[str, Any]] = [dict(r) for _, r in clean_df.iterrows()]
             if not rows:
                 continue
 

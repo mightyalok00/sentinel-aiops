@@ -1,0 +1,25 @@
+
+{
+  "include": [
+    "backend",
+    "ml_engine",
+    "tests"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    ".pytest_cache",
+    "data",
+    ".venv"
+  ],
+  "reportMissingImports": "none",
+  "reportMissingTypeStubs": "none",
+  "reportUnknownMemberType": "none",
+  "reportUnknownArgumentType": "none",
+  "reportUnknownVariableType": "none",
+  "reportAttributeAccessIssue": "none",
+  "reportArgumentType": "none",
+  "reportCallIssue": "none",
+  "reportOperatorIssue": "none",
+  "reportOptionalMemberAccess": "none",
+  "pythonVersion": "3.11"
+}

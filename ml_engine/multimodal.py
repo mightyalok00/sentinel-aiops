@@ -75,7 +75,7 @@ def analyze_logs(case_dir: Path, max_samples: int = 5) -> dict[str, Any]:
         service_col = "container_name" if "container_name" in df.columns else "service"
         service_error_counts: dict[str, int] = {}
         if service_col in error_df.columns:
-            service_error_counts = error_df[service_col].value_counts().to_dict()
+            service_error_counts = {str(k): int(v) for k, v in pd.Series(error_df[service_col]).value_counts().items()}
 
         total = len(df)
         err_count = len(error_df)
@@ -143,7 +143,7 @@ def analyze_traces(case_dir: Path, max_samples: int = 4) -> dict[str, Any]:
                 "slow_services": []
             }
 
-        df["duration"] = pd.to_numeric(df["duration"], errors="coerce").fillna(0)
+        df["duration"] = pd.to_numeric(pd.Series(df["duration"]), errors="coerce").fillna(0)
         p95 = float(df["duration"].quantile(0.95))
         p99 = float(df["duration"].quantile(0.99))
 
@@ -155,11 +155,13 @@ def analyze_traces(case_dir: Path, max_samples: int = 4) -> dict[str, Any]:
             grouped = slow_df.groupby(service_col)["duration"].agg(["count", "mean", "max"]).reset_index()
             grouped = grouped.sort_values(by="mean", ascending=False)
             for _, r in grouped.head(max_samples).iterrows():
+                mean_val = float(pd.to_numeric(r["mean"], errors="coerce"))
+                max_val = float(pd.to_numeric(r["max"], errors="coerce"))
                 slow_services.append({
                     "service": str(r[service_col]),
                     "slow_spans": int(r["count"]),
-                    "avg_duration_ms": round(float(r["mean"]) / 1000.0, 1),
-                    "max_duration_ms": round(float(r["max"]) / 1000.0, 1)
+                    "avg_duration_ms": round(mean_val / 1000.0, 1),
+                    "max_duration_ms": round(max_val / 1000.0, 1)
                 })
 
         # Duration in RCAEval spans is recorded in microseconds (100,000us = 100ms)
